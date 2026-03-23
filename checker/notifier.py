@@ -29,6 +29,27 @@ def broadcast(token: str, chat_ids: list[str], text: str) -> None:
             logger.error("Failed to send message to chat_id %s: %s", chat_id, e)
 
 
+def format_heartbeat(product_name: str | None, size: str, available: bool, check_interval_hours: float, heartbeat_interval_days: int) -> str:
+    """Format a heartbeat status message for the admin."""
+    name = f"Canyon {product_name}" if product_name else "Canyon bike"
+    status = "Not in stock" if not available else "IN STOCK"
+    return (
+        f"✅ Canyon checker is alive\n\n"
+        f"Monitoring: {name} (size {size})\n"
+        f"Current status: {status}\n"
+        f"Check frequency: every {check_interval_hours:.0f}h\n\n"
+        f"Next heartbeat in {heartbeat_interval_days} days."
+    )
+
+
+def format_failure(error: str, attempt: int) -> str:
+    """Format a failure alert message for the admin."""
+    return (
+        f"⚠️ Canyon checker failure (attempt #{attempt})\n\n"
+        f"Error: {error}"
+    )
+
+
 def format_message(bike_url: str, changes: list[str], new_available: bool = False, product_name: str | None = None) -> str:
     """Format a Telegram notification message."""
     if new_available and any("IN STOCK" in c for c in changes):
