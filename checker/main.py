@@ -45,6 +45,10 @@ def _heartbeat_file(state_file: str) -> str:
     return state_file.replace("state.json", "heartbeat.json")
 
 
+def _reminder_file(state_file: str) -> str:
+    return state_file.replace("state.json", "reminder.json")
+
+
 def load_last_heartbeat(state_file: str) -> float:
     try:
         with open(_heartbeat_file(state_file)) as f:
@@ -58,6 +62,41 @@ def save_last_heartbeat(state_file: str) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w") as f:
         json.dump({"last_sent": time.time()}, f)
+
+
+def load_last_reminder(state_file: str) -> float:
+    try:
+        with open(_reminder_file(state_file)) as f:
+            return json.load(f)["last_sent"]
+    except Exception:
+        return 0.0
+
+
+def save_last_reminder(state_file: str) -> None:
+    path = _reminder_file(state_file)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump({"last_sent": time.time()}, f)
+
+
+def maybe_send_availability_reminder(config: dict, state) -> None:
+    """If bike is still available, re-send the alert once every 24 hours."""
+    if not state.available:
+        return
+    if time.time() - load_last_reminder(config["state_file"]) < 86400:
+        return
+    message = format_message(
+        config["bike_url"],
+        ["Bike is still IN STOCK — don't miss it!"],
+        new_available=True,
+        product_name=state.product_name,
+    )
+    try:
+        broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
+        save_last_reminder(config["state_file"])
+        logger.info("Availability reminder sent to all subscribers")
+    except Exception as e:
+        logger.error("Failed to send availability reminder: %s", e)
 
 
 def maybe_send_heartbeat(config: dict, params: dict, current_state) -> None:
@@ -110,12 +149,15 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
                 product_name=new_state.product_name,
             )
             broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
+            if new_state.available:
+                save_last_reminder(config["state_file"])  # reset so reminder fires in 24h
         else:
             logger.info(
                 "No changes (available=%s, delivery=%s)",
                 new_state.available,
                 new_state.expected_delivery,
             )
+            maybe_send_availability_reminder(config, new_state)
 
         save_state(config["state_file"], new_state)
 
