@@ -57,7 +57,7 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
         changes = diff_states(old_state, new_state)
         if changes:
             logger.info("State changed: %s", changes)
-            message = format_message(config["bike_url"], changes)
+            message = format_message(config["bike_url"], changes, new_available=new_state.available, product_name=new_state.product_name)
             broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
         else:
             logger.info(

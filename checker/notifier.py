@@ -29,9 +29,20 @@ def broadcast(token: str, chat_ids: list[str], text: str) -> None:
             logger.error("Failed to send message to chat_id %s: %s", chat_id, e)
 
 
-def format_message(bike_url: str, changes: list[str]) -> str:
+def format_message(bike_url: str, changes: list[str], new_available: bool = False, product_name: str | None = None) -> str:
     """Format a Telegram notification message."""
-    lines = ["<b>Canyon Bike Alert</b>", ""]
-    lines.extend(f"• {change}" for change in changes)
-    lines.extend(["", bike_url])
+    if new_available and any("IN STOCK" in c for c in changes):
+        name = f"Canyon {product_name}" if product_name else "Your Canyon bike"
+        lines = [
+            "🚨🚨 YOUR BIKE IS BACK IN STOCK 🚨🚨",
+            "",
+            f"🎉 The {name} is AVAILABLE NOW! 🔥🔥🔥",
+            "",
+            "👇 BUY IT NOW BEFORE IT'S GONE 👇",
+            bike_url,
+        ]
+    else:
+        lines = ["<b>Canyon Bike Alert</b>", ""]
+        lines.extend(f"• {change}" for change in changes)
+        lines.extend(["", bike_url])
     return "\n".join(lines)

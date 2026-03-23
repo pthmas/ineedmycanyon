@@ -22,6 +22,7 @@ class BikeState:
     available: bool
     availability_text: str
     expected_delivery: str | None
+    product_name: str | None = None
 
 
 def extract_params_from_url(product_url: str, site: str = "RoW") -> dict:
@@ -85,6 +86,8 @@ def fetch_bike_state(params: dict) -> BikeState:
     available = _is_available(availability_text)
     logger.debug("Raw availability text: %r", availability_text)
 
+    product_name = data.get("productData", {}).get("productName")
+
     # Try to get delivery date from productSummary lazy-loaded endpoint
     expected_delivery = None
     summary_path = data.get("productSummary", {}).get("url")
@@ -95,6 +98,7 @@ def fetch_bike_state(params: dict) -> BikeState:
         available=available,
         availability_text=availability_text,
         expected_delivery=expected_delivery,
+        product_name=product_name,
     )
 
 
