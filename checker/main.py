@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_config() -> dict:
-    required = ["BIKE_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_IDS", "TELEGRAM_ADMIN_CHAT_ID"]
+    required = ["BIKE_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_IDS"]
     missing = [k for k in required if not os.getenv(k)]
     if missing:
         logger.error("Missing required environment variables: %s", ", ".join(missing))
@@ -34,11 +34,10 @@ def load_config() -> dict:
         "bike_url": os.environ["BIKE_URL"],
         "telegram_token": os.environ["TELEGRAM_BOT_TOKEN"],
         "telegram_chat_ids": chat_ids,
-        "admin_chat_id": os.environ["TELEGRAM_ADMIN_CHAT_ID"],
+        "admin_chat_id": os.getenv("TELEGRAM_ADMIN_CHAT_ID"),
         "check_interval_hours": float(os.getenv("CHECK_INTERVAL_HOURS", "1")),
         "heartbeat_interval_days": int(os.getenv("HEARTBEAT_INTERVAL_DAYS", "3")),
         "state_file": os.getenv("STATE_FILE_PATH", "/data/state.json"),
-        "canyon_site": os.getenv("CANYON_SITE", "RoW"),
     }
 
 
@@ -62,6 +61,8 @@ def save_last_heartbeat(state_file: str) -> None:
 
 
 def maybe_send_heartbeat(config: dict, params: dict, current_state) -> None:
+    if not config["admin_chat_id"]:
+        return
     last = load_last_heartbeat(config["state_file"])
     interval = config["heartbeat_interval_days"] * 86400
     if time.time() - last >= interval:
@@ -128,7 +129,7 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
         logger.error("Check failed (attempt %d): %s", consecutive_failures, e)
 
         # Alert admin on first failure and every 5 after that
-        if consecutive_failures == 1 or consecutive_failures % 5 == 0:
+        if config["admin_chat_id"] and (consecutive_failures == 1 or consecutive_failures % 5 == 0):
             try:
                 send_message(
                     config["telegram_token"],
@@ -143,7 +144,7 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
 
 def main() -> None:
     config = load_config()
-    params = extract_params_from_url(config["bike_url"], site=config["canyon_site"])
+    params = extract_params_from_url(config["bike_url"])
 
     logger.info("Starting Canyon bike checker")
     logger.info("Bike: %s", config["bike_url"])
@@ -151,7 +152,8 @@ def main() -> None:
         "Monitoring: size=%s, color=%s", params["size_value"], params["color_value"]
     )
     logger.info("Check interval: %s hour(s)", config["check_interval_hours"])
-    logger.info("Heartbeat: every %s day(s) to admin", config["heartbeat_interval_days"])
+    if config["admin_chat_id"]:
+        logger.info("Heartbeat: every %s day(s) to admin", config["heartbeat_interval_days"])
 
     consecutive_failures = 0
     while True:

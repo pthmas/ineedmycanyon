@@ -25,7 +25,7 @@ class BikeState:
     product_name: str | None = None
 
 
-def extract_params_from_url(product_url: str, site: str = "RoW") -> dict:
+def extract_params_from_url(product_url: str) -> dict:
     """Extract Canyon Demandware API parameters from a product page URL.
 
     Example URL:
@@ -55,7 +55,6 @@ def extract_params_from_url(product_url: str, site: str = "RoW") -> dict:
         )
 
     return {
-        "site": site,
         "locale": locale,
         "pid": pid,
         "color_param": color_param,
@@ -69,7 +68,7 @@ def fetch_bike_state(params: dict) -> BikeState:
     """Fetch current bike availability and delivery date from Canyon API."""
     api_url = (
         f"{BASE_URL}/on/demandware.store"
-        f"/Sites-{params['site']}-Site/{params['locale']}/Product-Variation"
+        f"/Sites-RoW-Site/{params['locale']}/Product-Variation"
     )
     query = {
         params["color_param"]: params["color_value"],

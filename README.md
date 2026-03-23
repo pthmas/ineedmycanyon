@@ -45,13 +45,12 @@ The checker calls Canyon's product API every hour (configurable). When the avail
 cp .env.example .env
 ```
 
-Open `.env` and fill in the required values:
+Open `.env` and fill in the three required values:
 
 ```
 BIKE_URL=<your Canyon URL from step 3>
 TELEGRAM_BOT_TOKEN=<your token from step 1>
 TELEGRAM_CHAT_IDS=<your chat ID from step 2>
-TELEGRAM_ADMIN_CHAT_ID=<your chat ID from step 2>
 ```
 
 To notify multiple people when the bike is available, add their chat IDs separated by commas:
@@ -59,9 +58,10 @@ To notify multiple people when the bike is available, add their chat IDs separat
 TELEGRAM_CHAT_IDS=123456789,987654321
 ```
 
-The admin (`TELEGRAM_ADMIN_CHAT_ID`) is separate from subscribers and receives:
-- A **heartbeat** every 3 days confirming the checker is still running
-- **Failure alerts** if the checker can't reach Canyon's API
+Optionally, set `TELEGRAM_ADMIN_CHAT_ID` to receive heartbeats every 3 days and failure alerts:
+```
+TELEGRAM_ADMIN_CHAT_ID=<your chat ID>
+```
 
 ### 5. Run
 
@@ -100,10 +100,9 @@ The current state is saved in `./data/state.json` so the checker won't send dupl
 | `BIKE_URL` | Yes | — | Canyon product page URL with color and size selected |
 | `TELEGRAM_BOT_TOKEN` | Yes | — | Bot token from @BotFather |
 | `TELEGRAM_CHAT_IDS` | Yes | — | Comma-separated list of Telegram user IDs to notify when bike is available |
-| `TELEGRAM_ADMIN_CHAT_ID` | Yes | — | Telegram user ID that receives heartbeats and failure alerts |
 | `CHECK_INTERVAL_HOURS` | No | `1` | How often to check, in hours |
+| `TELEGRAM_ADMIN_CHAT_ID` | No | — | Telegram user ID that receives heartbeats and failure alerts |
 | `HEARTBEAT_INTERVAL_DAYS` | No | `3` | How often the admin receives a status heartbeat, in days |
-| `CANYON_SITE` | No | `RoW` | Canyon site code (RoW works for most countries) |
 | `LOG_LEVEL` | No | `INFO` | Set to `DEBUG` for verbose logging |
 
 ---
