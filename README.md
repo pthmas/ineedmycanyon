@@ -108,5 +108,6 @@ The current state is saved in `./data/state.json` so the checker won't send dupl
 | `CHECK_INTERVAL_HOURS` | No | `1` | How often to check, in hours |
 | `TELEGRAM_ADMIN_CHAT_ID` | No | — | Telegram user ID that receives heartbeats and failure alerts |
 | `HEARTBEAT_INTERVAL_DAYS` | No | `3` | How often the admin receives a status heartbeat, in days |
+| `STATE_FILE_PATH` | No | `/data/state.json` | Path to the state file inside the container |
 | `LOG_LEVEL` | No | `INFO` | Set to `DEBUG` for verbose logging |
 
