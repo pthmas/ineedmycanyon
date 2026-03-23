@@ -4,7 +4,12 @@ Monitors a Canyon bike for availability changes and notifies you via Telegram wh
 
 ## How it works
 
-The checker calls Canyon's product API every hour (configurable). When the availability or delivery date changes compared to the last check, it sends a Telegram message to your account. It runs in a Docker container so it works 24/7 in the background on your laptop.
+The checker calls Canyon's product API every hour (configurable). It runs in a Docker container so it works 24/7 in the background on your laptop.
+
+- When the bike **comes back in stock**, all subscribers get a notification immediately
+- While the bike **stays in stock**, subscribers get a daily reminder so you don't miss it
+- When the **delivery date changes**, subscribers are notified
+- Optionally, an admin receives a heartbeat every 3 days and failure alerts if the checker can't reach Canyon
 
 ## Prerequisites
 
