@@ -105,15 +105,3 @@ The current state is saved in `./data/state.json` so the checker won't send dupl
 | `HEARTBEAT_INTERVAL_DAYS` | No | `3` | How often the admin receives a status heartbeat, in days |
 | `LOG_LEVEL` | No | `INFO` | Set to `DEBUG` for verbose logging |
 
----
-
-## Troubleshooting
-
-**"Could not find color/size variant parameters in URL"**
-Make sure you select both a color and a size on the Canyon product page before copying the URL. The URL must contain `pv_rahmenfarbe` and `pv_rahmengroesse` parameters.
-
-**No Telegram message on first run**
-This is expected. The first run saves the current state as a baseline. Notifications only fire when something *changes*.
-
-**Container keeps restarting**
-Check `docker compose logs` for error messages. The most common cause is a missing or incorrect `.env` variable.
