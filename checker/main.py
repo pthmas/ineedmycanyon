@@ -41,39 +41,19 @@ def load_config() -> dict:
     }
 
 
-def _heartbeat_file(state_file: str) -> str:
-    return state_file.replace("state.json", "heartbeat.json")
+def _sibling_file(state_file: str, name: str) -> str:
+    return os.path.join(os.path.dirname(state_file), name)
 
 
-def _reminder_file(state_file: str) -> str:
-    return state_file.replace("state.json", "reminder.json")
-
-
-def load_last_heartbeat(state_file: str) -> float:
+def _load_timestamp(path: str) -> float:
     try:
-        with open(_heartbeat_file(state_file)) as f:
+        with open(path) as f:
             return json.load(f)["last_sent"]
-    except Exception:
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
         return 0.0
 
 
-def save_last_heartbeat(state_file: str) -> None:
-    path = _heartbeat_file(state_file)
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
-        json.dump({"last_sent": time.time()}, f)
-
-
-def load_last_reminder(state_file: str) -> float:
-    try:
-        with open(_reminder_file(state_file)) as f:
-            return json.load(f)["last_sent"]
-    except Exception:
-        return 0.0
-
-
-def save_last_reminder(state_file: str) -> None:
-    path = _reminder_file(state_file)
+def _save_timestamp(path: str) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w") as f:
         json.dump({"last_sent": time.time()}, f)
@@ -83,7 +63,8 @@ def maybe_send_availability_reminder(config: dict, state) -> None:
     """If bike is still available, re-send the alert once every 24 hours."""
     if not state.available:
         return
-    if time.time() - load_last_reminder(config["state_file"]) < 86400:
+    reminder_file = _sibling_file(config["state_file"], "reminder.json")
+    if time.time() - _load_timestamp(reminder_file) < 86400:
         return
     message = format_message(
         config["bike_url"],
@@ -93,7 +74,7 @@ def maybe_send_availability_reminder(config: dict, state) -> None:
     )
     try:
         broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
-        save_last_reminder(config["state_file"])
+        _save_timestamp(reminder_file)
         logger.info("Availability reminder sent to all subscribers")
     except Exception as e:
         logger.error("Failed to send availability reminder: %s", e)
@@ -102,9 +83,9 @@ def maybe_send_availability_reminder(config: dict, state) -> None:
 def maybe_send_heartbeat(config: dict, params: dict, current_state) -> None:
     if not config["admin_chat_id"]:
         return
-    last = load_last_heartbeat(config["state_file"])
+    heartbeat_file = _sibling_file(config["state_file"], "heartbeat.json")
     interval = config["heartbeat_interval_days"] * 86400
-    if time.time() - last >= interval:
+    if time.time() - _load_timestamp(heartbeat_file) >= interval:
         available = current_state.available if current_state else False
         product_name = current_state.product_name if current_state else None
         message = format_heartbeat(
@@ -116,7 +97,7 @@ def maybe_send_heartbeat(config: dict, params: dict, current_state) -> None:
         )
         try:
             send_message(config["telegram_token"], config["admin_chat_id"], message)
-            save_last_heartbeat(config["state_file"])
+            _save_timestamp(heartbeat_file)
             logger.info("Heartbeat sent to admin")
         except Exception as e:
             logger.error("Failed to send heartbeat: %s", e)
@@ -150,7 +131,7 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
             )
             broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
             if new_state.available:
-                save_last_reminder(config["state_file"])  # reset so reminder fires in 24h
+                _save_timestamp(_sibling_file(config["state_file"], "reminder.json"))  # reset so reminder fires in 24h
         else:
             logger.info(
                 "No changes (available=%s, delivery=%s)",
