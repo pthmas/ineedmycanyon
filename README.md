@@ -50,7 +50,12 @@ Open `.env` and fill in the three required values:
 ```
 BIKE_URL=<your Canyon URL from step 3>
 TELEGRAM_BOT_TOKEN=<your token from step 1>
-TELEGRAM_CHAT_ID=<your chat ID from step 2>
+TELEGRAM_CHAT_IDS=<your chat ID from step 2>
+```
+
+To notify multiple people, add their chat IDs separated by commas:
+```
+TELEGRAM_CHAT_IDS=123456789,987654321
 ```
 
 ### 5. Run
@@ -89,7 +94,7 @@ The current state is saved in `./data/state.json` so the checker won't send dupl
 |---|---|---|---|
 | `BIKE_URL` | Yes | — | Canyon product page URL with color and size selected |
 | `TELEGRAM_BOT_TOKEN` | Yes | — | Bot token from @BotFather |
-| `TELEGRAM_CHAT_ID` | Yes | — | Your Telegram user ID |
+| `TELEGRAM_CHAT_IDS` | Yes | — | Comma-separated list of Telegram user IDs to notify |
 | `CHECK_INTERVAL_HOURS` | No | `1` | How often to check, in hours |
 | `CANYON_SITE` | No | `RoW` | Canyon site code (RoW works for most countries) |
 | `LOG_LEVEL` | No | `INFO` | Set to `DEBUG` for verbose logging |

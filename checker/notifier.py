@@ -20,6 +20,15 @@ def send_message(token: str, chat_id: str, text: str) -> None:
     logger.info("Telegram message sent to chat_id %s", chat_id)
 
 
+def broadcast(token: str, chat_ids: list[str], text: str) -> None:
+    """Send a Telegram message to all subscribers."""
+    for chat_id in chat_ids:
+        try:
+            send_message(token, chat_id, text)
+        except Exception as e:
+            logger.error("Failed to send message to chat_id %s: %s", chat_id, e)
+
+
 def format_message(bike_url: str, changes: list[str]) -> str:
     """Format a Telegram notification message."""
     lines = ["<b>Canyon Bike Alert</b>", ""]

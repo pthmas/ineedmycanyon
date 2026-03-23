@@ -6,7 +6,7 @@ import time
 
 from dotenv import load_dotenv
 
-from .notifier import format_message, send_message
+from .notifier import broadcast, format_message
 from .scraper import extract_params_from_url, fetch_bike_state
 from .state import diff_states, load_state, save_state
 
@@ -21,16 +21,18 @@ logger = logging.getLogger(__name__)
 
 
 def load_config() -> dict:
-    required = ["BIKE_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]
+    required = ["BIKE_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_IDS"]
     missing = [k for k in required if not os.getenv(k)]
     if missing:
         logger.error("Missing required environment variables: %s", ", ".join(missing))
         sys.exit(1)
 
+    chat_ids = [cid.strip() for cid in os.environ["TELEGRAM_CHAT_IDS"].split(",") if cid.strip()]
+
     return {
         "bike_url": os.environ["BIKE_URL"],
         "telegram_token": os.environ["TELEGRAM_BOT_TOKEN"],
-        "telegram_chat_id": os.environ["TELEGRAM_CHAT_ID"],
+        "telegram_chat_ids": chat_ids,
         "check_interval_hours": float(os.getenv("CHECK_INTERVAL_HOURS", "1")),
         "state_file": os.getenv("STATE_FILE_PATH", "/data/state.json"),
         "canyon_site": os.getenv("CANYON_SITE", "RoW"),
@@ -56,7 +58,7 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
         if changes:
             logger.info("State changed: %s", changes)
             message = format_message(config["bike_url"], changes)
-            send_message(config["telegram_token"], config["telegram_chat_id"], message)
+            broadcast(config["telegram_token"], config["telegram_chat_ids"], message)
         else:
             logger.info(
                 "No changes (available=%s, delivery=%s)",
@@ -73,9 +75,9 @@ def run_check(config: dict, params: dict, consecutive_failures: int) -> int:
 
         if consecutive_failures == 5:
             try:
-                send_message(
+                broadcast(
                     config["telegram_token"],
-                    config["telegram_chat_id"],
+                    config["telegram_chat_ids"],
                     f"Canyon bike checker has failed {consecutive_failures} times in a row.\n"
                     f"Last error: {e}\n\nMonitoring may have lapsed.",
                 )
